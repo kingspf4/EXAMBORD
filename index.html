@@ -216,15 +216,15 @@
 
                                 <div className="grid grid-cols-3 gap-4 mt-6">
                                     <div className="bg-blue-600 p-4 rounded-xl text-white shadow-md">
-                                        <div className="text-sm font-bold opacity-80 uppercase">應到</div>
+                                        <div className="text-sm font-bold opacity-80 uppercase">應到/人</div>
                                         <input type="number" className="text-4xl font-black w-full bg-transparent outline-none text-center" value={examData.shouldArrive} onChange={(e)=>setExamData({...examData, shouldArrive: e.target.value})} />
                                     </div>
                                     <div className="bg-green-600 p-4 rounded-xl text-white shadow-md">
-                                        <div className="text-sm font-bold opacity-80 uppercase">實到</div>
+                                        <div className="text-sm font-bold opacity-80 uppercase">實到/人</div>
                                         <input type="number" className="text-4xl font-black w-full bg-transparent outline-none text-center" value={examData.actualArrive} onChange={(e)=>setExamData({...examData, actualArrive: e.target.value})} />
                                     </div>
                                     <div className="bg-red-600 p-4 rounded-xl text-white shadow-md flex flex-col">
-                                        <div className="text-sm font-bold opacity-80 uppercase">缺席名單</div>
+                                        <div className="text-sm font-bold opacity-80 uppercase">缺席名單/座號</div>
                                         <textarea className="text-sm font-bold w-full bg-transparent outline-none resize-none flex-1 mt-1 leading-tight" value={examData.absentList} onChange={(e)=>setExamData({...examData, absentList: e.target.value})} placeholder="座號..." />
                                     </div>
                                 </div>
