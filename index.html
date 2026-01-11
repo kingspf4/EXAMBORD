@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期末考看板 - 布局優化版</title>
+    <title>期末考看板 - 時間對齊優化版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -35,18 +35,25 @@
         .slide-active { transform: translateX(0); opacity: 1; }
         .slide-exit { transform: translateX(-100%); opacity: 0; }
 
-        /* 時間輸入框樣式優化 */
+        /* 時間輸入框：修正平均分配與對齊 */
         .time-input {
             background: transparent;
             border-bottom: 4px solid #cbd5e1;
-            text-align: center;
-            width: 130px;
+            text-align: center; /* 確保文字在中心 */
+            width: 160px; /* 增加寬度讓空間更平均 */
             outline: none;
             transition: all 0.3s;
+            padding: 0 5px;
+            letter-spacing: 0.05em; /* 稍微增加字距，讓時分看起來更平均 */
         }
         .time-input:focus {
             border-color: #3b82f6;
             background: rgba(59, 130, 246, 0.05);
+        }
+        /* 確保 placeholder 也能置中 */
+        .time-input::placeholder {
+            text-align: center;
+            opacity: 0.3;
         }
     </style>
 </head>
@@ -69,9 +76,9 @@
         const App = () => {
             const [now, setNow] = useState(new Date());
             const [offset, setOffset] = useState(() => Number(localStorage.getItem('exam_clock_offset')) || 0);
-            const [schedule, setSchedule] = useState(() => JSON.parse(localStorage.getItem('exam_full_v9')) || DEFAULT_SCHEDULE);
-            const [examData, setExamData] = useState(() => JSON.parse(localStorage.getItem('exam_data_v9')) || { shouldArrive: "", actualArrive: "", absentList: "" });
-            const [messages, setMessages] = useState(() => JSON.parse(localStorage.getItem('exam_messages_v9')) || ["考卷記得寫姓名座號", "檢查完再檢查或趴下休息", "有問題請舉手問老師"]);
+            const [schedule, setSchedule] = useState(() => JSON.parse(localStorage.getItem('exam_full_v10')) || DEFAULT_SCHEDULE);
+            const [examData, setExamData] = useState(() => JSON.parse(localStorage.getItem('exam_data_v10')) || { shouldArrive: "", actualArrive: "", absentList: "" });
+            const [messages, setMessages] = useState(() => JSON.parse(localStorage.getItem('exam_messages_v10')) || ["考卷記得寫姓名座號", "檢查完再檢查或趴下休息", "有問題請舉手問老師"]);
             const [msgIndex, setMsgIndex] = useState(0);
 
             useEffect(() => {
@@ -88,13 +95,12 @@
 
             useEffect(() => {
                 localStorage.setItem('exam_clock_offset', offset);
-                localStorage.setItem('exam_full_v9', JSON.stringify(schedule));
-                localStorage.setItem('exam_data_v9', JSON.stringify(examData));
-                localStorage.setItem('exam_messages_v9', JSON.stringify(messages));
+                localStorage.setItem('exam_full_v10', JSON.stringify(schedule));
+                localStorage.setItem('exam_data_v10', JSON.stringify(examData));
+                localStorage.setItem('exam_messages_v10', JSON.stringify(messages));
             }, [offset, schedule, examData, messages]);
 
             const adjustedNow = useMemo(() => new Date(now.getTime() + offset), [now, offset]);
-            
             const formattedCurrentTime = useMemo(() => {
                 const h = String(adjustedNow.getHours()).padStart(2, '0');
                 const m = String(adjustedNow.getMinutes()).padStart(2, '0');
@@ -131,7 +137,6 @@
 
             return (
                 <div className="flex flex-col h-screen w-screen bg-gray-300">
-                    {/* 上方區域 */}
                     <div className="h-[25vh] flex bg-white border-b-8 border-gray-400 shadow-xl">
                         <div className="w-[35%] flex flex-col items-center justify-center bg-gray-50 border-r-4 group relative">
                             <div className="text-[1.5vw] text-gray-400 font-black tracking-widest">現在時間</div>
@@ -156,28 +161,25 @@
                     </div>
 
                     <div className="flex-1 flex overflow-hidden">
-                        {/* 左側：編輯區與出席區域 */}
                         <div className="w-[70%] flex flex-col border-r-8 border-gray-400 bg-white">
-                            {/* 上方科目列表比例縮小，為下方騰出空間 */}
-                            <div className="flex-[1.8] flex flex-col justify-center p-4 gap-1">
+                            <div className="flex-[1.8] flex flex-col justify-center p-4 gap-2">
                                 {schedule.map((slot, i) => slot.type === 'exam' && (
-                                    <div key={i} className={`flex items-center gap-4 px-10 py-4 rounded-[3rem] border-4 transition-all ${currentSlot?.start === slot.start && currentSlot?.type === 'exam' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : 'border-gray-100 bg-gray-50'}`}>
+                                    <div key={i} className={`flex items-center gap-4 px-10 py-5 rounded-[3rem] border-4 transition-all ${currentSlot?.start === slot.start && currentSlot?.type === 'exam' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : 'border-gray-100 bg-gray-50'}`}>
                                         <input 
                                             className="w-full text-[5vw] font-black bg-transparent outline-none focus:text-blue-700" 
                                             value={slot.subject || ""} 
                                             onChange={(e) => { const n = [...schedule]; n[i].subject = e.target.value; setSchedule(n); }}
                                             placeholder="輸入科目"
                                         />
-                                        <div className="flex items-center gap-3 text-[4vw] font-black font-mono whitespace-nowrap">
+                                        <div className="flex items-center gap-3 text-[4.5vw] font-black font-mono whitespace-nowrap">
                                             <input type="text" value={slot.start} onChange={(e) => handleTimeChange(i, 'start', e.target.value)} className="time-input" placeholder="00:00" />
-                                            <span className="text-gray-300">~</span>
+                                            <span className="text-gray-400 px-2">~</span>
                                             <input type="text" value={slot.end} onChange={(e) => handleTimeChange(i, 'end', e.target.value)} className="time-input" placeholder="00:00" />
                                         </div>
                                     </div>
                                 ))}
                             </div>
                             
-                            {/* 出席區域：明確定義高度並增加 padding 確保與上方隔離 */}
                             <div className="h-[25vh] flex flex-row border-t-4 border-gray-100">
                                 <div className="flex-1 flex flex-col items-center justify-center bg-blue-700 text-white p-2">
                                     <div className="text-[1.3vw] font-bold opacity-90 uppercase">應到人數</div>
@@ -194,7 +196,6 @@
                             </div>
                         </div>
 
-                        {/* 右側提醒看板 */}
                         <div className="w-[30%] flex flex-col bg-[#fffdf0] p-4">
                             <div className="flex-1 border-4 border-dashed border-yellow-200 rounded-[2.5rem] bg-white shadow-inner mb-4 relative overflow-hidden">
                                 <div className="absolute top-5 left-8 bg-yellow-400 text-white px-4 py-1 rounded-full font-bold text-sm shadow-sm z-20">提醒事項</div>
