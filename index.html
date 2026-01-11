@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期末考看板系統 - 穩定修復版</title>
+    <title>期末考看板系統 - 終極穩定版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -14,25 +14,29 @@
             overflow: hidden;
             background-color: #f3f4f6;
         }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { 
+        /* 隱藏數字輸入框微調箭頭 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; margin: 0; 
         }
+        /* 進度條平滑過渡 */
         .track-transition { transition: stroke-dashoffset 1s linear, stroke 0.5s ease; }
-        .text-shadow-lg { text-shadow: 3px 3px 6px rgba(0,0,0,0.15); }
-        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        /* 提醒文字漸入動畫 */
+        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* 確保時間輸入框不偏位 */
-        .time-input-flat {
+        /* 時間輸入框樣式：向左貼齊且可編輯 */
+        .time-input-inline {
             background: transparent;
             border-bottom: 2px solid #d1d5db;
             outline: none;
             text-align: center;
             width: 140px;
+            transition: border-color 0.3s;
         }
-        .time-input-flat:focus {
+        .time-input-inline:focus {
             border-color: #3b82f6;
         }
     </style>
@@ -43,43 +47,51 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
+        // 預設作息表
         const DEFAULT_SCHEDULE = [
             { type: 'break', start: '08:30', end: '08:40', label: '準備' },
             { type: 'exam',  start: '08:40', end: '09:20', label: '第一節' },
             { type: 'break', start: '09:20', end: '09:30', label: '下課' },
             { type: 'exam',  start: '09:30', end: '10:10', label: '第二節' },
             { type: 'break', start: '10:10', end: '10:30', label: '下課 (大)' },
-            { type: 'exam',  start: '10:30', end: '11:10', label: '第三節' },
+            { type: 'exam',  start: '10:30', end: '11:10', subject: '英文', label: '第三節' },
             { type: 'break', start: '11:10', end: '11:20', label: '收卷' }
         ];
 
+        // 預設提醒訊息
         const DEFAULT_MESSAGES = ["考卷記得寫班級姓名座號", "有問題舉手問老師", "不會寫的題目跳過寫會的", "耐心、細心、小心", "檢查完再檢查或趴下休息"];
 
         const App = () => {
             const [now, setNow] = useState(new Date());
             const [offset, setOffset] = useState(() => Number(localStorage.getItem('exam_clock_offset')) || 0);
-            const [schedule, setSchedule] = useState(() => JSON.parse(localStorage.getItem('exam_schedule_v3')) || DEFAULT_SCHEDULE);
-            const [messages, setMessages] = useState(() => JSON.parse(localStorage.getItem('exam_messages_v3')) || DEFAULT_MESSAGES);
-            const [examData, setExamData] = useState(() => JSON.parse(localStorage.getItem('exam_data_v3')) || {
+            
+            // 從 LocalStorage 載入資料，若無則使用預設值
+            const [schedule, setSchedule] = useState(() => JSON.parse(localStorage.getItem('exam_schedule_stable')) || DEFAULT_SCHEDULE);
+            const [messages, setMessages] = useState(() => JSON.parse(localStorage.getItem('exam_messages_stable')) || DEFAULT_MESSAGES);
+            const [examData, setExamData] = useState(() => JSON.parse(localStorage.getItem('exam_data_stable')) || {
                 subjects: ["國語", "數學", "英文"],
                 shouldArrive: "", actualArrive: "", absentList: ""
             });
 
+            // 每秒更新系統時間
             useEffect(() => {
                 const timer = setInterval(() => setNow(new Date()), 1000);
                 return () => clearInterval(timer);
             }, []);
 
+            // 資料自動儲存
             useEffect(() => {
                 localStorage.setItem('exam_clock_offset', offset);
-                localStorage.setItem('exam_schedule_v3', JSON.stringify(schedule));
-                localStorage.setItem('exam_messages_v3', JSON.stringify(messages));
-                localStorage.setItem('exam_data_v3', JSON.stringify(examData));
+                localStorage.setItem('exam_schedule_stable', JSON.stringify(schedule));
+                localStorage.setItem('exam_messages_stable', JSON.stringify(messages));
+                localStorage.setItem('exam_data_stable', JSON.stringify(examData));
             }, [offset, schedule, messages, examData]);
 
+            // 計算修正後時間與當日累計毫秒
             const adjustedNow = useMemo(() => new Date(now.getTime() + offset), [now, offset]);
-            const currentMs = useMemo(() => adjustedNow.getHours() * 3600000 + adjustedNow.getMinutes() * 60000 + adjustedNow.getSeconds() * 1000, [adjustedNow]);
+            const currentMs = adjustedNow.getHours() * 3600000 + adjustedNow.getMinutes() * 60000 + adjustedNow.getSeconds() * 1000;
 
+            // 判斷當前時段
             const currentSlot = useMemo(() => {
                 for (let slot of schedule) {
                     const [sh, sm] = slot.start.split(':').map(Number);
@@ -91,26 +103,34 @@
                 return null;
             }, [schedule, currentMs]);
 
+            // 進度條顏色與狀態文字邏輯
             const progress = useMemo(() => {
                 if (!currentSlot) return { percent: 0, color: 'stroke-gray-300', text: '非考試時段' };
                 const p = ((currentMs - currentSlot.startMs) / currentSlot.duration) * 100;
                 let color = 'stroke-green-500';
-                if (currentSlot.remaining < 300000) color = 'stroke-red-500';
+                if (currentSlot.remaining < 600000) color = 'stroke-red-500'; // 剩餘10分變紅
                 else if (currentSlot.remaining < currentSlot.duration / 2) color = 'stroke-yellow-400';
-                return { percent: 100 - p, color, text: currentSlot.type === 'exam' ? (examData.subjects[schedule.filter(s => s.type === 'exam').indexOf(schedule.find(s => s.start === currentSlot.start))] || currentSlot.label) : currentSlot.label };
+                
+                // 找出該節科目的標題
+                const examSlots = schedule.filter(s => s.type === 'exam');
+                const examIdx = examSlots.indexOf(schedule.find(s => s.start === currentSlot.start));
+                const statusText = currentSlot.type === 'exam' ? (examData.subjects[examIdx] || currentSlot.label) : currentSlot.label;
+                
+                return { percent: 100 - p, color, text: statusText };
             }, [currentSlot, currentMs, examData.subjects, schedule]);
 
+            // 提醒事項輪播邏輯（每20秒絲滑切換）
             const reminderMessage = useMemo(() => {
                 if (!currentSlot) return "請檢查考程設定";
                 const list = currentSlot.type === 'exam' ? messages : ["下課準備下一科", "提前喝水上廁所", "坐在位置上準備"];
-                const idx = Math.floor(currentMs / 20000) % list.length; // 20秒換一次，絲滑切換
+                const idx = Math.floor(currentMs / 20000) % list.length;
                 return list[idx];
             }, [currentSlot, currentMs, messages]);
 
             return (
                 <div className="flex flex-col h-screen w-screen bg-gray-200">
                     
-                    {/* 上方：大時間與進度條 */}
+                    {/* 上方：系統時間與進度條 */}
                     <div className="h-[30vh] flex bg-white border-b-8 border-gray-300 shadow-xl relative z-10">
                         <div className="w-2/5 flex flex-col items-center justify-center border-r-4 bg-gray-50 relative group">
                             <div className="text-[2vw] text-gray-400 font-black mb-[-1vw]">現在時間</div>
@@ -139,7 +159,7 @@
                     </div>
 
                     <div className="flex-1 flex overflow-hidden">
-                        {/* 左側：考程與原始風格出席 */}
+                        {/* 左側：考程設定與出席區域 */}
                         <div className="w-[60%] flex flex-col border-r-8 border-gray-300 bg-white">
                             <div className="flex-[1.8] overflow-y-auto p-6 space-y-4">
                                 {schedule.map((slot, i) => slot.type === 'exam' && (
@@ -153,17 +173,17 @@
                                         <div className="flex-1 flex items-center justify-end gap-3 text-[4.5vw] font-black font-mono">
                                             <input type="text" value={slot.start} onChange={(e) => {
                                                 const n = [...schedule]; n[i].start = e.target.value; setSchedule(n);
-                                            }} className="time-input-flat text-blue-600" placeholder="00:00"/>
+                                            }} className="time-input-inline text-blue-600" placeholder="00:00"/>
                                             <span className="text-gray-400">~</span>
                                             <input type="text" value={slot.end} onChange={(e) => {
                                                 const n = [...schedule]; n[i].end = e.target.value; setSchedule(n);
-                                            }} className="time-input-flat text-gray-800" placeholder="00:00"/>
+                                            }} className="time-input-inline text-gray-800" placeholder="00:00"/>
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* 原始風格：出缺席大方塊區 */}
+                            {/* 傳統藍綠紅出缺席方塊 */}
                             <div className="h-[28vh] flex flex-row border-t-8 border-gray-200">
                                 <div className="flex-1 flex flex-col items-center justify-center bg-blue-600 text-white p-2">
                                     <div className="text-[2vw] font-bold opacity-80 uppercase tracking-tighter">應到</div>
@@ -180,7 +200,7 @@
                             </div>
                         </div>
 
-                        {/* 右側：提醒看板 (滑動顯示) */}
+                        {/* 右側：提醒看板與訊息編輯 */}
                         <div className="w-[40%] flex flex-col bg-[#fffdf0] p-6">
                             <div className="flex-1 flex flex-col items-center justify-center border-8 border-dashed border-yellow-200 rounded-[3rem] bg-white p-12 shadow-inner mb-6 relative overflow-hidden">
                                 <div className="absolute top-6 left-8 bg-yellow-400 text-white px-5 py-2 rounded-full font-black text-xl shadow-md">提醒事項</div>
@@ -191,10 +211,10 @@
                             
                             <div className="h-[30%] overflow-y-auto bg-yellow-50/50 p-5 rounded-3xl border-2 border-yellow-100 shadow-sm">
                                 <div className="flex justify-between items-center mb-3">
-                                    <div className="text-lg font-black text-yellow-600">編輯輪播內容</div>
+                                    <div className="text-lg font-black text-yellow-600 uppercase">編輯提醒</div>
                                     <button onClick={()=>setMessages([...messages, "新提醒事項"])} className="bg-yellow-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-sm hover:bg-yellow-600">+ 新增</button>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-3 text-gray-700">
                                     {messages.map((m, i) => (
                                         <div key={i} className="flex gap-2">
                                             <input className="flex-1 text-lg p-2 border-2 rounded-xl focus:border-yellow-400 outline-none font-bold shadow-sm bg-white" value={m} onChange={(e)=>{
