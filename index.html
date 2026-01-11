@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期末考看板 - 佈局完美修復版</title>
+    <title>期末考看板 - 完美排版放大版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -13,46 +13,62 @@
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .track-transition { transition: stroke-dashoffset 1s linear, stroke 0.5s ease; }
         
+        /* 絲滑滑動動畫 */
         .message-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
         .slide-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); text-align: center; padding: 0 1.5rem; width: 100%; }
         .slide-enter { transform: translateX(100%); opacity: 0; }
         .slide-active { transform: translateX(0); opacity: 1; }
         .slide-exit { transform: translateX(-100%); opacity: 0; }
 
-        /* 完美對齊的橫向容器 */
-        .perfect-row {
+        /* 根據參考圖優化的排版樣式 */
+        .exam-row-container {
             display: flex;
             align-items: center;
             width: 100%;
-            justify-content: space-between;
+            justify-content: flex-start;
+            padding: 1.5vw 3vw;
         }
-        
-        /* 每個輸入框的基礎樣式 */
-        .perfect-input {
-            background: transparent;
-            text-align: center;
-            outline: none;
+
+        /* 科目區：大字且靠左 */
+        .subject-input {
+            width: 30%;
+            font-size: 5.5vw;
             font-weight: 900;
-            border-bottom: 3px solid #e5e7eb;
-            transition: border-color 0.3s;
+            background: transparent;
+            outline: none;
+            text-align: left;
+            color: #1a1a1a;
         }
-        .perfect-input:focus { border-color: #3b82f6; }
 
-        /* 科目寬度 */
-        .subject-field { width: 30%; font-size: 4vw; text-align: left; border-bottom: none; }
-        
-        /* 時間欄位寬度：確保 HH:mm 完整呈現 */
-        .time-field { 
-            width: 160px; 
-            font-size: 4vw; 
+        /* 時間區：包含開始、~、結束 */
+        .time-group-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-grow: 1;
+            gap: 1vw;
+        }
+
+        /* 時間數字輸入框：極大化 */
+        .big-time-input {
+            background: transparent;
+            font-size: 6vw;
+            font-weight: 900;
             font-family: "Courier New", monospace;
-            letter-spacing: 2px;
+            text-align: center;
+            width: 250px; /* 足夠寬度防止切斷 */
+            outline: none;
+            border-bottom: 5px solid #e5e7eb;
+            transition: all 0.3s;
+            line-height: 1;
         }
+        .big-time-input:focus { border-color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
 
-        .separator {
-            font-size: 3vw;
-            color: #d1d5db;
-            padding: 0 10px;
+        .time-separator {
+            font-size: 4vw;
+            color: #9ca3af;
+            font-weight: 900;
+            padding: 0 1vw;
         }
     </style>
 </head>
@@ -75,9 +91,9 @@
         const App = () => {
             const [now, setNow] = useState(new Date());
             const [offset, setOffset] = useState(() => Number(localStorage.getItem('exam_clock_offset')) || 0);
-            const [schedule, setSchedule] = useState(() => JSON.parse(localStorage.getItem('exam_full_v14')) || DEFAULT_SCHEDULE);
-            const [examData, setExamData] = useState(() => JSON.parse(localStorage.getItem('exam_data_v14')) || { shouldArrive: "", actualArrive: "", absentList: "" });
-            const [messages, setMessages] = useState(() => JSON.parse(localStorage.getItem('exam_messages_v14')) || ["考卷記得寫姓名座號", "檢查完再檢查或趴下休息", "有問題請舉手問老師"]);
+            const [schedule, setSchedule] = useState(() => JSON.parse(localStorage.getItem('exam_full_v15')) || DEFAULT_SCHEDULE);
+            const [examData, setExamData] = useState(() => JSON.parse(localStorage.getItem('exam_data_v15')) || { shouldArrive: "", actualArrive: "", absentList: "" });
+            const [messages, setMessages] = useState(() => JSON.parse(localStorage.getItem('exam_messages_v15')) || ["考卷記得寫班級姓名座號", "檢查完再檢查或趴下休息", "有問題請舉手問老師"]);
             const [msgIndex, setMsgIndex] = useState(0);
 
             useEffect(() => {
@@ -94,9 +110,9 @@
 
             useEffect(() => {
                 localStorage.setItem('exam_clock_offset', offset);
-                localStorage.setItem('exam_full_v14', JSON.stringify(schedule));
-                localStorage.setItem('exam_data_v14', JSON.stringify(examData));
-                localStorage.setItem('exam_messages_v14', JSON.stringify(messages));
+                localStorage.setItem('exam_full_v15', JSON.stringify(schedule));
+                localStorage.setItem('exam_data_v15', JSON.stringify(examData));
+                localStorage.setItem('exam_messages_v15', JSON.stringify(messages));
             }, [offset, schedule, examData, messages]);
 
             const adjustedNow = useMemo(() => new Date(now.getTime() + offset), [now, offset]);
@@ -107,7 +123,7 @@
                 return `${h}:${m}:${s}`;
             }, [adjustedNow]);
 
-            const currentTotalMs = adjustedNow.getHours() * 3600000 + adjustedNow.getMinutes() * 60000 + adjustedNow.getSeconds() * 1000;
+            const currentMs = adjustedNow.getHours() * 3600000 + adjustedNow.getMinutes() * 60000 + adjustedNow.getSeconds() * 1000;
 
             const currentSlot = useMemo(() => {
                 for (let slot of schedule) {
@@ -115,17 +131,17 @@
                     const [eh, em] = slot.end.split(':').map(Number);
                     const startMs = (sh || 0) * 3600000 + (sm || 0) * 60000;
                     const endMs = (eh || 0) * 3600000 + (em || 0) * 60000;
-                    if (currentTotalMs >= startMs && currentTotalMs < endMs) return { ...slot, startMs, endMs, duration: endMs - startMs, remaining: endMs - currentTotalMs };
+                    if (currentMs >= startMs && currentMs < endMs) return { ...slot, startMs, endMs, duration: endMs - startMs, remaining: endMs - currentMs };
                 }
                 return null;
-            }, [schedule, currentTotalMs]);
+            }, [schedule, currentMs]);
 
             const progress = useMemo(() => {
-                if (!currentSlot) return { percent: 0, color: 'stroke-gray-300', text: '非考試時段' };
-                const p = ((currentTotalMs - currentSlot.startMs) / currentSlot.duration) * 100;
-                const displayText = currentSlot.type === 'exam' ? (currentSlot.subject || '考試中') : currentSlot.label;
+                if (!currentSlot) return { percent: 0, color: 'stroke-gray-300', text: '休息中' };
+                const p = ((currentMs - currentSlot.startMs) / currentSlot.duration) * 100;
+                const displayText = currentSlot.type === 'exam' ? currentSlot.subject : currentSlot.label;
                 return { percent: 100 - p, color: currentSlot.remaining < 300000 ? 'stroke-red-500' : 'stroke-blue-600', text: displayText };
-            }, [currentSlot, currentTotalMs]);
+            }, [currentSlot, currentMs]);
 
             const handleTimeChange = (idx, field, val) => {
                 const next = [...schedule];
@@ -135,6 +151,7 @@
 
             return (
                 <div className="flex flex-col h-screen w-screen bg-gray-300">
+                    {/* 上方看板區域 */}
                     <div className="h-[25vh] flex bg-white border-b-8 border-gray-400 shadow-xl">
                         <div className="w-[35%] flex flex-col items-center justify-center bg-gray-50 border-r-4 group relative">
                             <div className="text-[1.5vw] text-gray-400 font-black tracking-widest uppercase">Now / 現在時間</div>
@@ -148,7 +165,7 @@
                         <div className="w-[65%] flex flex-col items-center justify-center p-6 bg-white relative">
                             <div className="absolute z-10 text-center">
                                 <div className="text-[4.5vw] font-black text-gray-800 leading-none mb-1 drop-shadow-sm">{progress.text}</div>
-                                <div className="text-[2vw] font-bold text-gray-400">{currentSlot ? `剩餘 ${Math.ceil(currentSlot.remaining/60000)} 分鐘` : '休息時間'}</div>
+                                <div className="text-[2vw] font-bold text-gray-400">{currentSlot ? `剩餘 ${Math.ceil(currentSlot.remaining/60000)} 分鐘` : '準備中'}</div>
                             </div>
                             <svg className="w-full h-full" viewBox="0 0 300 60">
                                 <rect x="5" y="10" width="290" height="40" rx="20" fill="none" stroke="#f3f4f6" strokeWidth="12" />
@@ -158,34 +175,35 @@
                     </div>
 
                     <div className="flex-1 flex overflow-hidden">
+                        {/* 左側：核心排版區域 */}
                         <div className="w-[70%] flex flex-col border-r-8 border-gray-400 bg-white">
-                            <div className="flex-[1.8] flex flex-col justify-center p-8 gap-4">
+                            <div className="flex-[2] flex flex-col justify-center p-4">
                                 {schedule.map((slot, i) => slot.type === 'exam' && (
-                                    <div key={i} className={`perfect-row px-12 py-6 rounded-[2.5rem] border-4 transition-all ${currentSlot?.start === slot.start && currentSlot?.type === 'exam' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : 'border-gray-100 bg-gray-50'}`}>
+                                    <div key={i} className={`exam-row-container rounded-[2.5rem] border-4 mb-2 transition-all ${currentSlot?.start === slot.start && currentSlot?.type === 'exam' ? 'border-yellow-400 bg-yellow-50 shadow-lg' : 'border-transparent bg-gray-50'}`}>
                                         
-                                        {/* 科目：向左靠 */}
+                                        {/* 科目區 */}
                                         <input 
-                                            className="perfect-input subject-field font-black" 
+                                            className="subject-input" 
                                             value={slot.subject || ""} 
                                             onChange={(e) => { const n = [...schedule]; n[i].subject = e.target.value; setSchedule(n); }}
                                             placeholder="請輸入科目"
                                         />
                                         
-                                        {/* 時間區塊：由左至右平均排列 */}
-                                        <div className="flex items-center">
+                                        {/* 時間區 */}
+                                        <div className="time-group-wrap">
                                             <input 
                                                 type="text" 
                                                 value={slot.start} 
                                                 onChange={(e) => handleTimeChange(i, 'start', e.target.value)} 
-                                                className="perfect-input time-field text-blue-600" 
+                                                className="big-time-input text-blue-600" 
                                                 placeholder="00:00" 
                                             />
-                                            <span className="separator font-black">~</span>
+                                            <span className="time-separator">~</span>
                                             <input 
                                                 type="text" 
                                                 value={slot.end} 
                                                 onChange={(e) => handleTimeChange(i, 'end', e.target.value)} 
-                                                className="perfect-input time-field text-gray-800" 
+                                                className="big-time-input text-gray-800" 
                                                 placeholder="00:00" 
                                             />
                                         </div>
@@ -193,22 +211,24 @@
                                 ))}
                             </div>
                             
+                            {/* 出缺席區域 */}
                             <div className="h-[25vh] flex flex-row border-t-8 border-gray-200">
                                 <div className="flex-1 flex flex-col items-center justify-center bg-blue-700 text-white p-2">
-                                    <div className="text-[1.3vw] font-bold opacity-90 uppercase">應到人數</div>
-                                    <input type="number" className="w-full text-center bg-transparent text-[7.5vw] font-black outline-none" value={examData.shouldArrive} onChange={(e)=>setExamData({...examData, shouldArrive: e.target.value})} />
+                                    <div className="text-[1.3vw] font-bold opacity-90 uppercase tracking-tighter">Should Arrive / 應到</div>
+                                    <input type="number" className="w-full text-center bg-transparent text-[8vw] font-black outline-none" value={examData.shouldArrive} onChange={(e)=>setExamData({...examData, shouldArrive: e.target.value})} placeholder="0" />
                                 </div>
                                 <div className="flex-1 flex flex-col items-center justify-center bg-green-700 text-white p-2 border-l-4 border-white/20">
-                                    <div className="text-[1.3vw] font-bold opacity-90 uppercase">實到人數</div>
-                                    <input type="number" className="w-full text-center bg-transparent text-[7.5vw] font-black outline-none" value={examData.actualArrive} onChange={(e)=>setExamData({...examData, actualArrive: e.target.value})} />
+                                    <div className="text-[1.3vw] font-bold opacity-90 uppercase tracking-tighter">Actual Arrive / 實到</div>
+                                    <input type="number" className="w-full text-center bg-transparent text-[8vw] font-black outline-none" value={examData.actualArrive} onChange={(e)=>setExamData({...examData, actualArrive: e.target.value})} placeholder="0" />
                                 </div>
                                 <div className="flex-[1.2] flex flex-col items-center justify-center bg-red-700 text-white p-2 border-l-4 border-white/20">
-                                    <div className="text-[1.3vw] font-bold opacity-90 uppercase">未到名單</div>
-                                    <textarea className="w-full h-full text-center bg-transparent text-[2.5vw] font-black outline-none resize-none pt-1" value={examData.absentList} onChange={(e)=>setExamData({...examData, absentList: e.target.value})} />
+                                    <div className="text-[1.3vw] font-bold opacity-90 uppercase tracking-tighter">Absent / 未到名單</div>
+                                    <textarea className="w-full h-full text-center bg-transparent text-[2.8vw] font-black outline-none resize-none pt-2 placeholder-red-400" value={examData.absentList} onChange={(e)=>setExamData({...examData, absentList: e.target.value})} placeholder="..." />
                                 </div>
                             </div>
                         </div>
 
+                        {/* 右側：提醒看板 */}
                         <div className="w-[30%] flex flex-col bg-[#fffdf0] p-4">
                             <div className="flex-1 border-4 border-dashed border-yellow-200 rounded-[2.5rem] bg-white shadow-inner mb-4 relative overflow-hidden">
                                 <div className="absolute top-5 left-8 bg-yellow-400 text-white px-4 py-1 rounded-full font-bold text-sm shadow-sm z-20">提醒事項</div>
@@ -219,13 +239,13 @@
                                     })}
                                 </div>
                             </div>
-                            <div className="h-[35%] overflow-y-auto bg-white/60 p-4 rounded-3xl border-2 border-yellow-100">
-                                <div className="flex justify-between items-center mb-3">
-                                    <div className="text-xs font-bold text-yellow-600">編輯輪播內容</div>
+                            <div className="h-[35%] overflow-y-auto bg-white/60 p-4 rounded-3xl border-2 border-yellow-100 text-gray-700">
+                                <div className="flex justify-between items-center mb-3 text-yellow-600">
+                                    <div className="text-xs font-bold uppercase">Edit Messages</div>
                                     <button onClick={()=>setMessages([...messages, "新內容"])} className="bg-yellow-500 text-white px-3 py-1 rounded-full text-[11px] font-bold shadow-sm">+ 新增</button>
                                 </div>
                                 {messages.map((m, i) => (
-                                    <div key={i} className="flex gap-2 mb-2 text-gray-700">
+                                    <div key={i} className="flex gap-2 mb-2">
                                         <input className="flex-1 p-2 border rounded-xl text-[13px] font-bold outline-none bg-white focus:border-yellow-400" value={m} onChange={(e)=>{const n=[...messages]; n[i]=e.target.value; setMessages(n);}} />
                                         <button onClick={()=>setMessages(messages.filter((_,idx)=>idx!==i))} className="text-red-400 font-bold px-1">✕</button>
                                     </div>
