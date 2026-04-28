@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期末考看板 - 介面優化版</title>
+    <title>期末考看板 - 完美比例版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -11,7 +11,6 @@
     <style>
         body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; overflow: hidden; background-color: #f8fafc; }
         
-        /* 進度條斜紋動畫 */
         .striped-bar {
             background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
             background-size: 1rem 1rem;
@@ -20,12 +19,10 @@
         }
         @keyframes move-stripes { from { background-position: 1rem 0; } to { background-position: 0 0; } }
 
-        /* 輸入框樣式 */
         .clean-input { background: transparent; border-bottom: 2px solid #cbd5e1; transition: all 0.3s; text-align: center; }
         .clean-input:focus { border-bottom-color: #3b82f6; outline: none; background: rgba(255,255,255,0.5); }
         input[type="time"] { font-family: 'Consolas', monospace; cursor: pointer; }
 
-        /* 微調按鈕 */
         .adjust-btn { @apply px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs font-bold border border-gray-300 transition-colors; }
     </style>
 </head>
@@ -42,8 +39,8 @@
             const [isEditingMarquee, setIsEditingMarquee] = useState(false);
             
             const [schedule, setSchedule] = useState(() => JSON.parse(localStorage.getItem('board_schedule_v3')) || [
-                { subject: '國語文領域', supervisor: '王大明老師 / 李小美老師', intro: '08:35', start: '08:40', end: '09:20' },
-                { subject: '數學運算力', supervisor: '張三老師（巡堂：校長室代理人）', intro: '09:25', start: '09:30', end: '10:10' }
+                { subject: '國語文領域', supervisor: '王大明老師', intro: '08:35', start: '08:40', end: '09:20' },
+                { subject: '數學運算力', supervisor: '李小美老師', intro: '09:25', start: '09:30', end: '10:10' }
             ]);
             
             const [attendance, setAttendance] = useState(() => JSON.parse(localStorage.getItem('board_attendance')) || { expected: '', actual: '', absent: '' });
@@ -75,32 +72,17 @@
                     const endMs = eh * 3600000 + em * 60000;
 
                     if (currentMs >= introMs && currentMs < startMs) {
-                        return { 
-                            active: true, isIntro: true, 
-                            subject: item.subject + " (說明中)", 
-                            supervisor: item.supervisor, 
-                            percent: ((currentMs - introMs) / (startMs - introMs)) * 100, 
-                            color: 'bg-indigo-500', 
-                            remaining: Math.ceil((startMs - currentMs) / 60000) 
-                        };
+                        return { active: true, isIntro: true, subject: item.subject + " (說明中)", supervisor: item.supervisor, percent: ((currentMs - introMs) / (startMs - introMs)) * 100, color: 'bg-indigo-500', remaining: Math.ceil((startMs - currentMs) / 60000) };
                     }
-
                     if (currentMs >= startMs && currentMs < endMs) {
                         const totalDuration = endMs - startMs;
                         const elapsed = currentMs - startMs;
                         const percent = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
                         const remainingMinutes = Math.ceil((endMs - currentMs) / 60000);
-                        
                         let color = 'bg-green-500';
                         if (remainingMinutes <= 5) color = 'bg-red-600';
                         else if (percent > 50) color = 'bg-yellow-400';
-
-                        return { 
-                            active: true, isIntro: false,
-                            subject: item.subject, 
-                            supervisor: item.supervisor, 
-                            percent, color, remaining: remainingMinutes 
-                        };
+                        return { active: true, isIntro: false, subject: item.subject, supervisor: item.supervisor, percent, color, remaining: remainingMinutes };
                     }
                 }
                 return { active: false, subject: '準備中', supervisor: '', percent: 0, color: 'bg-gray-300', remaining: 0 };
@@ -144,7 +126,6 @@
                                 </div>
                             )}
                         </div>
-
                         <div className="flex-1 bg-white px-8 pb-3 flex flex-col justify-end relative">
                             <div className="flex justify-between items-end mb-2">
                                 <div className="flex items-center gap-4">
@@ -159,9 +140,7 @@
                                 </div>
                                 <div className="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
                                     <span className="text-sm font-bold text-gray-400 uppercase">Supervisor</span>
-                                    <span className="text-xl font-bold text-slate-700">
-                                        {currentStatus.supervisor || "---"}
-                                    </span>
+                                    <span className="text-xl font-bold text-slate-700">{currentStatus.supervisor || "---"}</span>
                                 </div>
                             </div>
                             <div className="w-full h-6 bg-gray-100 rounded-full overflow-hidden shadow-inner border border-gray-200 relative">
@@ -200,35 +179,27 @@
                                         <div key={i} className={`flex items-center gap-4 p-3 rounded-xl transition-all border-l-4 ${isCurrent ? 'bg-blue-50 border-blue-500 shadow-md scale-[1.01]' : 'bg-slate-50 border-transparent hover:bg-white hover:shadow-sm'}`}>
                                             <div className={`w-8 text-center font-bold text-xl flex-none ${isCurrent ? 'text-blue-600' : 'text-gray-400'}`}>{i + 1}</div>
                                             
-                                            {/* 科目：固定 6 字寬度並置中 */}
-                                            <input 
-                                                className="w-48 flex-none text-2xl font-black clean-input text-center text-slate-800" 
-                                                value={item.subject} 
-                                                onChange={(e) => updateSchedule(i, 'subject', e.target.value)} 
-                                                placeholder="科目名稱" 
-                                            />
+                                            {/* 科目欄位 (w-48) */}
+                                            <input className="w-48 flex-none text-2xl font-black clean-input text-center text-slate-800" value={item.subject} onChange={(e) => updateSchedule(i, 'subject', e.target.value)} placeholder="科目名稱" />
                                             
-                                            {/* 監考老師：再次增大比例 */}
-                                            <input 
-                                                className="flex-[2] text-xl font-bold clean-input text-left text-slate-600 px-4" 
-                                                value={item.supervisor} 
-                                                onChange={(e) => updateSchedule(i, 'supervisor', e.target.value)} 
-                                                placeholder="監考老師及職務備註..." 
-                                            />
+                                            {/* 監考老師欄位 (w-48) */}
+                                            <input className="w-48 flex-none text-xl font-bold clean-input text-center text-slate-600" value={item.supervisor} onChange={(e) => updateSchedule(i, 'supervisor', e.target.value)} placeholder="監考老師" />
 
-                                            {/* 時間區塊：維持加寬 */}
-                                            <div className="flex-none flex items-center gap-4 bg-white px-6 py-2 rounded-xl border shadow-inner">
-                                                <div className="flex flex-col items-center">
+                                            {/* 剩餘空間平均分配給時間區塊 */}
+                                            <div className="flex-1 flex gap-4">
+                                                {/* 說明區間 */}
+                                                <div className="flex-1 flex flex-col items-center justify-center bg-indigo-50/30 rounded-xl border border-indigo-100 p-2">
                                                     <span className="text-[10px] text-indigo-500 font-bold uppercase mb-1">說明開始</span>
-                                                    <input type="time" className="text-base font-bold outline-none bg-slate-50 px-2 rounded w-24" value={item.intro} onChange={(e) => updateSchedule(i, 'intro', e.target.value)} />
+                                                    <input type="time" className="text-xl font-bold outline-none bg-white border border-indigo-200 px-4 py-1 rounded-lg w-full text-center" value={item.intro} onChange={(e) => updateSchedule(i, 'intro', e.target.value)} />
                                                 </div>
-                                                <div className="w-[1px] h-10 bg-slate-200 mx-1"></div>
-                                                <div className="flex flex-col items-center">
+
+                                                {/* 考試區間 */}
+                                                <div className="flex-[1.5] flex flex-col items-center justify-center bg-blue-50/30 rounded-xl border border-blue-100 p-2">
                                                     <span className="text-[10px] text-blue-500 font-bold uppercase mb-1">考試區間</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <input type="time" className="text-base font-bold outline-none bg-slate-50 px-2 rounded w-24" value={item.start} onChange={(e) => updateSchedule(i, 'start', e.target.value)} />
+                                                    <div className="flex items-center gap-3 w-full">
+                                                        <input type="time" className="flex-1 text-xl font-bold outline-none bg-white border border-blue-200 px-4 py-1 rounded-lg text-center" value={item.start} onChange={(e) => updateSchedule(i, 'start', e.target.value)} />
                                                         <span className="text-gray-300 font-black">~</span>
-                                                        <input type="time" className="text-base font-bold outline-none bg-slate-50 px-2 rounded w-24" value={item.end} onChange={(e) => updateSchedule(i, 'end', e.target.value)} />
+                                                        <input type="time" className="flex-1 text-xl font-bold outline-none bg-white border border-blue-200 px-4 py-1 rounded-lg text-center" value={item.end} onChange={(e) => updateSchedule(i, 'end', e.target.value)} />
                                                     </div>
                                                 </div>
                                             </div>
