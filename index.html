@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期末考看板 - 學測版</title>
+    <title>期末考看板 - 介面優化版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -42,8 +42,8 @@
             const [isEditingMarquee, setIsEditingMarquee] = useState(false);
             
             const [schedule, setSchedule] = useState(() => JSON.parse(localStorage.getItem('board_schedule_v3')) || [
-                { subject: '國語', supervisor: '王老師', intro: '08:35', start: '08:40', end: '09:20' },
-                { subject: '數學', supervisor: '李老師', intro: '09:25', start: '09:30', end: '10:10' }
+                { subject: '國語文領域', supervisor: '王大明老師 / 李小美老師', intro: '08:35', start: '08:40', end: '09:20' },
+                { subject: '數學運算力', supervisor: '張三老師（巡堂：校長室代理人）', intro: '09:25', start: '09:30', end: '10:10' }
             ]);
             
             const [attendance, setAttendance] = useState(() => JSON.parse(localStorage.getItem('board_attendance')) || { expected: '', actual: '', absent: '' });
@@ -118,12 +118,12 @@
             return (
                 <div className="flex flex-col h-screen w-screen bg-slate-50">
                     
-                    {/* A區：頂部大時鐘 */}
+                    {/* A區：頂部時鐘 */}
                     <div className="h-[25vh] bg-white border-b-4 border-gray-200 flex flex-col shadow-sm relative z-20">
                         <div className="flex-[1.5] flex items-center justify-center relative group bg-gray-50/50">
                             <div className="flex flex-col gap-2 mr-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => setOffset(o => o + 60000)} className="adjust-btn text-blue-600 border-blue-200 bg-white">+1 分</button>
-                                <button onClick={() => setOffset(o => o + 1000)} className="adjust-btn text-blue-600 border-blue-200 bg-white">+1 秒</button>
+                                <button onClick={() => setOffset(o => o + 60000)} className="adjust-btn">+1 分</button>
+                                <button onClick={() => setOffset(o => o + 1000)} className="adjust-btn">+1 秒</button>
                             </div>
                             <div className="flex flex-col items-center">
                                 <span className="text-gray-400 font-bold tracking-[0.5em] text-xs uppercase mb-[-5px]">Current Time</span>
@@ -132,8 +132,8 @@
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2 ml-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => setOffset(o => o - 60000)} className="adjust-btn text-red-600 border-red-200 bg-white">-1 分</button>
-                                <button onClick={() => setOffset(o => o - 1000)} className="adjust-btn text-red-600 border-red-200 bg-white">-1 秒</button>
+                                <button onClick={() => setOffset(o => o - 60000)} className="adjust-btn">-1 分</button>
+                                <button onClick={() => setOffset(o => o - 1000)} className="adjust-btn">-1 秒</button>
                             </div>
                             {currentStatus.active && (
                                 <div className="absolute right-12 flex flex-col items-center animate-pulse">
@@ -185,13 +185,11 @@
                         )}
                     </div>
 
-                    {/* C區：考程表設定 (欄位比例調整) */}
+                    {/* C區：考程表設定 */}
                     <div className="flex-1 bg-slate-100 p-4 overflow-y-auto">
-                        <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-5 border border-slate-200">
+                        <div className="max-w-[1500px] mx-auto bg-white rounded-2xl shadow-lg p-5 border border-slate-200">
                             <div className="flex justify-between items-center mb-3 border-b pb-2">
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-xl font-black text-slate-700 border-l-8 border-blue-500 pl-3">考試時間表設定</h2>
-                                </div>
+                                <h2 className="text-xl font-black text-slate-700 border-l-8 border-blue-500 pl-3">考程表設定</h2>
                                 <button onClick={addSubject} className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold hover:bg-blue-200 transition">+ 新增科目</button>
                             </div>
                             
@@ -199,24 +197,34 @@
                                 {schedule.map((item, i) => {
                                     const isCurrent = currentStatus.subject.includes(item.subject) && currentStatus.active;
                                     return (
-                                        <div key={i} className={`flex items-center gap-6 p-3 rounded-xl transition-all border-l-4 ${isCurrent ? 'bg-blue-50 border-blue-500 shadow-md scale-[1.01]' : 'bg-slate-50 border-transparent hover:bg-white hover:shadow-sm'}`}>
+                                        <div key={i} className={`flex items-center gap-4 p-3 rounded-xl transition-all border-l-4 ${isCurrent ? 'bg-blue-50 border-blue-500 shadow-md scale-[1.01]' : 'bg-slate-50 border-transparent hover:bg-white hover:shadow-sm'}`}>
                                             <div className={`w-8 text-center font-bold text-xl flex-none ${isCurrent ? 'text-blue-600' : 'text-gray-400'}`}>{i + 1}</div>
                                             
-                                            {/* 科目：縮短 */}
-                                            <input className="w-40 flex-none text-2xl font-black clean-input text-left text-slate-800" value={item.subject} onChange={(e) => updateSchedule(i, 'subject', e.target.value)} placeholder="科目" />
+                                            {/* 科目：固定 6 字寬度並置中 */}
+                                            <input 
+                                                className="w-48 flex-none text-2xl font-black clean-input text-center text-slate-800" 
+                                                value={item.subject} 
+                                                onChange={(e) => updateSchedule(i, 'subject', e.target.value)} 
+                                                placeholder="科目名稱" 
+                                            />
                                             
-                                            {/* 監考老師：增長 */}
-                                            <input className="flex-1 text-xl font-bold clean-input text-left text-slate-600" value={item.supervisor} onChange={(e) => updateSchedule(i, 'supervisor', e.target.value)} placeholder="監考老師姓名..." />
+                                            {/* 監考老師：再次增大比例 */}
+                                            <input 
+                                                className="flex-[2] text-xl font-bold clean-input text-left text-slate-600 px-4" 
+                                                value={item.supervisor} 
+                                                onChange={(e) => updateSchedule(i, 'supervisor', e.target.value)} 
+                                                placeholder="監考老師及職務備註..." 
+                                            />
 
-                                            {/* 時間區塊：增長 */}
+                                            {/* 時間區塊：維持加寬 */}
                                             <div className="flex-none flex items-center gap-4 bg-white px-6 py-2 rounded-xl border shadow-inner">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-[10px] text-indigo-500 font-bold uppercase mb-1 tracking-tighter">說明開始</span>
+                                                    <span className="text-[10px] text-indigo-500 font-bold uppercase mb-1">說明開始</span>
                                                     <input type="time" className="text-base font-bold outline-none bg-slate-50 px-2 rounded w-24" value={item.intro} onChange={(e) => updateSchedule(i, 'intro', e.target.value)} />
                                                 </div>
                                                 <div className="w-[1px] h-10 bg-slate-200 mx-1"></div>
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-[10px] text-blue-500 font-bold uppercase mb-1 tracking-tighter">正式考試區間</span>
+                                                    <span className="text-[10px] text-blue-500 font-bold uppercase mb-1">考試區間</span>
                                                     <div className="flex items-center gap-2">
                                                         <input type="time" className="text-base font-bold outline-none bg-slate-50 px-2 rounded w-24" value={item.start} onChange={(e) => updateSchedule(i, 'start', e.target.value)} />
                                                         <span className="text-gray-300 font-black">~</span>
